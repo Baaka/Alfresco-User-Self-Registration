@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+
+<beans>   
+    <bean id="registrationServiceScript" parent="baseJavaScriptExtension" class="org.ecmkit.service.script.ScriptRegistrationService">
+        <property name="extensionName">
+            <value>registrationService</value>
+        </property>
+        <!-- Creates Sites which require the ServiceRegistry -->
+        <property name="serviceRegistry" ref="ServiceRegistry"/>
+        <property name="registrationService" ref="registrationService"/>
+    </bean>
+    
+    <bean id="RegistrationHelper" class="org.ecmkit.registration.RegistrationHelper">
+        <property name="serviceRegistry" ref="ServiceRegistry"/>
+        <property name="repositoryHelper" ref="repositoryHelper"/>
+        <property name="registrationService" ref="registrationService"/>
+    </bean>
+    
+    <bean id="baseRegistrationDelegate" parent="baseJavaDelegate"
+            class="org.ecmkit.registration.activiti.AbstractRegistrationDelegate" abstract="true">
+        <property name="registrationHelper" ref="RegistrationHelper" />
+    </bean>
+    
+    <bean id="SendRegistrationDelegate" parent="baseRegistrationDelegate" 
+         class="org.ecmkit.registration.activiti.SendRegistrationDelegate" />
+         
+         
+       <bean id="registrationService" class="org.ecmkit.service.impl.RegistrationServiceImpl" init-method="init">
+        <property name="workflowService" ref="WorkflowService"/>
+        <property name="workflowAdminService" ref="workflowAdminService"/>
+        <property name="sysAdminParams" ref="sysAdminParams"/>
+        <property name="nodeService" ref="NodeService"/>
+        <property name="personService" ref="PersonService"/>
+        <property name="authenticationService" ref="AuthenticationService"/>
+        <property name="permissionService" ref="PermissionService"/>
+        <property name="tenantService" ref="tenantService"/>
+        <property name="tenantAdminService" ref="tenantAdminService"/>
+		 <property name="authorityService" ref="authorityService"/>
+		 <property name="createEntityService" ref="createEntityService"/>
+        
+        <!-- 
+        <property name="actionService" ref="ActionService"/>
+        
+        
+        <property name="authenticationService" ref="AuthenticationService"/>
+        <property name="siteService" ref="SiteService"/>
+        <property name="namespaceService" ref="NamespaceService"/>
+        <property name="dictionaryService" ref="DictionaryService"/>
+        
+        <property name="userNameGenerator" ref="userNameGenerator"/>
+        <property name="passwordGenerator" ref="passwordGenerator"/> 
+        <property name="sendEmails" value="${notification.email.siteinvite}"/> 
+        <property name="policyComponent">
+            <ref bean="policyComponent" />
+        </property>
+         -->
+     </bean>
+     
+     <bean id="CreateUserDelegate" parent="baseRegistrationDelegate" 
+         class="org.ecmkit.registration.activiti.CreateUserDelegate" />
+     
+      <!-- Site service security bean -->
+    <bean id="RegistrationService_security" class="org.alfresco.repo.security.permissions.impl.AlwaysProceedMethodInterceptor" />
+     
+    <!-- Site service transaction bean -->
+    <bean id="RegistrationService_transaction" class="org.springframework.transaction.interceptor.TransactionInterceptor">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">${server.transaction.mode.default}</prop>
+            </props>
+        </property>
+    </bean>
+    
+    <bean id="RegistrationService" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="proxyInterfaces">
+            <list>
+                <value>org.ecmkit.service.RegistrationService</value>
+            </list>
+        </property>
+        <property name="targetName">
+            <value>registrationService</value>
+        </property>
+        <property name="interceptorNames">
+            <list>
+<!--                 <idref local="RegistrationService_transaction"/> -->
+                <idref bean="AuditMethodInterceptor"/>
+                <idref bean="exceptionTranslator"/>
+<!--                 <idref local="RegistrationService_security"/> -->
+            </list>
+        </property>
+    </bean>
+
+	<bean id="createEntityService" class="org.ecmkit.service.impl.CreateEntityServiceImpl">
+		<property name="networkRequestService" ref="networkRequestService"/>
+		<property name="createSiteUrl" value="share/service/modules/create-site" />
+		<property name="personUrl" value="alfresco/service/api/people" />
+		<property name="addMemberUrl" value="alfresco/service/api/sites" />
+		<property name="deleteMemberUrl" value="alfresco/service/api/sites" />
+		<property name="powerUser" value="admin" />
+		<property name="powerPasswd" value="admin" />
+		<property name="shareLoginUrl" value="share/page/dologin" />
+	</bean>
+	
+	<bean id="networkRequestService" class="org.ecmkit.service.impl.NetworkRequestServiceImpl">
+		<property name="hostUrl" value="http://localhost:8080/" />
+		<property name="ticketUrl" value="alfresco/service/api/login" />
+	</bean>
+    
+</beans>
