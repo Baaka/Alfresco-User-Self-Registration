@@ -1,4 +1,4 @@
 Alfresco-User-Self-Registration
 ===============================
 
-This purpose of the project is to provide user self registration functionality.
+The purpose of the project is to provide user self registration functionality.
